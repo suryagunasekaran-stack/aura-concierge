@@ -1,4 +1,4 @@
-import { getPromotions } from "../data/promotions.js";
+import { getPromotions as fetchPromotions } from "../data/promotions.js";
 
 /**
  * @param {{ productId?: string, packageId?: string, query?: string }} args
@@ -6,7 +6,7 @@ import { getPromotions } from "../data/promotions.js";
  */
 export async function getPromotions(args = {}, _ctx) {
   try {
-    const promos = getPromotions({
+    const promos = fetchPromotions({
       productId: args.productId,
       packageId: args.packageId,
       query: args.query,

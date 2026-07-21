@@ -76,7 +76,7 @@ export const schemas = [
     function: {
       name: "book_appointment",
       description:
-        "Stage a booking (does NOT finalize). Call after the customer has chosen a slot from check_availability AND you have collected their full name and email address. Returns a summary for the customer to confirm. Wait for an explicit yes before calling confirm_booking. Never finalize here.",
+        "Stage a booking (does NOT finalize). Call after the customer has chosen a slot from check_availability AND you have collected their full name, email address, preferred clinic location, and doctor preference. Ask for location and doctor if missing — do not stage without them. Returns a summary for the customer to confirm. Wait for an explicit yes before calling confirm_booking. Never finalize here.",
       parameters: {
         type: "object",
         properties: {
@@ -91,6 +91,27 @@ export const schemas = [
             type: "string",
             description: "Customer's email address for confirmation",
           },
+          location: {
+            type: "string",
+            enum: [
+              "holland-village-clinic",
+              "holland-village-aesthetics",
+              "palais",
+            ],
+            description:
+              "Preferred clinic location. holland-village-clinic = AURA Clinic OHV #03-10; holland-village-aesthetics = AURA Medical Aesthetics OHV #03-09; palais = AURA Clinic Palais Renaissance",
+          },
+          doctorPreference: {
+            type: "string",
+            enum: [
+              "dr-karen-soh",
+              "dr-joanna-chan",
+              "dr-jc",
+              "no-preference",
+            ],
+            description:
+              "Preferred doctor. Use no-preference if the customer has no preference.",
+          },
           customerKey: {
             type: "string",
             description: "Customer phone-like key (will be scoped to session)",
@@ -102,6 +123,8 @@ export const schemas = [
           "time",
           "customerName",
           "customerEmail",
+          "location",
+          "doctorPreference",
           "customerKey",
         ],
         additionalProperties: false,

@@ -3,7 +3,7 @@
 let appointmentSeq = 1000;
 let escalationSeq = 5000;
 
-/** @type {Array<{ bookingId: string, customerKey: string, serviceId: string, serviceName: string, date: string, time: string, customerName?: string, customerEmail?: string, status: string, createdAt: string }>} */
+/** @type {Array<{ bookingId: string, customerKey: string, serviceId: string, serviceName: string, date: string, time: string, customerName?: string, customerEmail?: string, location?: string, locationLabel?: string, locationAddress?: string, doctorPreference?: string, doctorLabel?: string, status: string, createdAt: string }>} */
 const appointments = [
   {
     bookingId: "bk-9001",
@@ -14,6 +14,11 @@ const appointments = [
     time: "14:00",
     customerName: "Mei Ling",
     customerEmail: "meiling@example.com",
+    location: "holland-village-aesthetics",
+    locationLabel: "AURA Medical Aesthetics, One Holland Village",
+    locationAddress: "7 Holland Village Way #03-09 Singapore 275748",
+    doctorPreference: "no-preference",
+    doctorLabel: "No preference — next available doctor",
     status: "confirmed",
     createdAt: "2026-07-10T10:00:00.000Z",
   },
@@ -23,7 +28,7 @@ const appointments = [
 const escalations = [];
 
 /**
- * @param {{ customerKey: string, serviceId: string, serviceName: string, date: string, time: string, customerName?: string, customerEmail?: string }} data
+ * @param {{ customerKey: string, serviceId: string, serviceName: string, date: string, time: string, customerName?: string, customerEmail?: string, location?: string, locationLabel?: string, locationAddress?: string, doctorPreference?: string, doctorLabel?: string }} data
  */
 export function createAppointment(data) {
   appointmentSeq += 1;
@@ -36,6 +41,11 @@ export function createAppointment(data) {
     time: data.time,
     customerName: data.customerName,
     customerEmail: data.customerEmail,
+    location: data.location,
+    locationLabel: data.locationLabel,
+    locationAddress: data.locationAddress,
+    doctorPreference: data.doctorPreference,
+    doctorLabel: data.doctorLabel,
     status: "confirmed",
     createdAt: new Date().toISOString(),
   };
@@ -126,6 +136,11 @@ export function resetAppointmentsForTests() {
     time: "14:00",
     customerName: "Mei Ling",
     customerEmail: "meiling@example.com",
+    location: "holland-village-aesthetics",
+    locationLabel: "AURA Medical Aesthetics, One Holland Village",
+    locationAddress: "7 Holland Village Way #03-09 Singapore 275748",
+    doctorPreference: "no-preference",
+    doctorLabel: "No preference — next available doctor",
     status: "confirmed",
     createdAt: "2026-07-10T10:00:00.000Z",
   });

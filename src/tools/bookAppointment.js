@@ -1,4 +1,10 @@
 import { findService } from "../data/services.js";
+import {
+  BOOKING_LOCATIONS,
+  DOCTOR_PREFERENCES,
+  resolveDoctorPreference,
+  resolveLocation,
+} from "../data/bookingOptions.js";
 import * as sessionStore from "../session/store.js";
 
 function isValidEmail(email) {
@@ -7,23 +13,60 @@ function isValidEmail(email) {
 
 /**
  * Stage a booking — does NOT finalize.
- * @param {{ serviceId: string, date: string, time: string, customerName: string, customerEmail: string, customerKey: string }} args
+ * @param {{ serviceId: string, date: string, time: string, customerName: string, customerEmail: string, location: string, doctorPreference: string, customerKey: string }} args
  * @param {{ sessionId: string, customerKey: string }} ctx
  */
 export async function bookAppointment(args = {}, ctx) {
   try {
     const customerKey = ctx.customerKey;
-    const { serviceId, date, time, customerName, customerEmail } = args;
-    if (!serviceId || !date || !time || !customerName || !customerEmail) {
+    const {
+      serviceId,
+      date,
+      time,
+      customerName,
+      customerEmail,
+      location,
+      doctorPreference,
+    } = args;
+
+    if (
+      !serviceId ||
+      !date ||
+      !time ||
+      !customerName ||
+      !customerEmail ||
+      !location ||
+      !doctorPreference
+    ) {
       return {
         ok: false,
         error:
-          "serviceId, date, time, customerName, and customerEmail are required",
+          "serviceId, date, time, customerName, customerEmail, location, and doctorPreference are required",
       };
     }
+
     if (!isValidEmail(customerEmail)) {
       return { ok: false, error: "customerEmail must be a valid email address" };
     }
+
+    const locationInfo = resolveLocation(location);
+    if (!locationInfo) {
+      return {
+        ok: false,
+        error: "invalid location",
+        validLocations: Object.keys(BOOKING_LOCATIONS),
+      };
+    }
+
+    const doctorInfo = resolveDoctorPreference(doctorPreference);
+    if (!doctorInfo) {
+      return {
+        ok: false,
+        error: "invalid doctorPreference",
+        validDoctorPreferences: Object.keys(DOCTOR_PREFERENCES),
+      };
+    }
+
     const service = findService({ serviceId });
     if (!service) {
       return { ok: false, reason: "service_not_found" };
@@ -44,6 +87,11 @@ export async function bookAppointment(args = {}, ctx) {
       customerName,
       customerEmail: customerEmail.trim().toLowerCase(),
       customerKey,
+      location: locationInfo.id,
+      locationLabel: locationInfo.label,
+      locationAddress: locationInfo.address,
+      doctorPreference: doctorInfo.id,
+      doctorLabel: doctorInfo.label,
       durationMin: service.durationMin,
       priceSGD: service.priceSGD,
     };
@@ -56,7 +104,7 @@ export async function bookAppointment(args = {}, ctx) {
       needsConfirmation: true,
       summary,
       message:
-        "Booking staged. Read the summary back to the customer and wait for an explicit yes before calling confirm_booking.",
+        "Booking staged. Read the summary back to the customer (including location and doctor preference) and wait for an explicit yes before calling confirm_booking.",
     };
   } catch (err) {
     return { ok: false, error: err.message || String(err) };

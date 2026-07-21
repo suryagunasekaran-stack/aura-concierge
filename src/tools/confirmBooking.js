@@ -22,6 +22,11 @@ export async function confirmBooking(args = {}, ctx) {
       time: pending.time,
       customerName: pending.customerName,
       customerEmail: pending.customerEmail,
+      location: pending.location,
+      locationLabel: pending.locationLabel,
+      locationAddress: pending.locationAddress,
+      doctorPreference: pending.doctorPreference,
+      doctorLabel: pending.doctorLabel,
     });
 
     delete session.pending.booking;

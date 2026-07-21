@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
+    "web:dev": "npm run dev --prefix web",
+    "web:build": "npm run build --prefix web",
     "dev": "node src/cli.js",
     "test": "vitest run",
     "test:new": "vitest run test/highValueTools.test.js"

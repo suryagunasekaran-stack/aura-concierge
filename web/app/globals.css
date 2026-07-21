@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+:root {
+  --aura-primary: #1f6e56;
+  --aura-primary-dark: #23614e;
+  --aura-text: #363328;
+  --aura-text-muted: #5c574f;
+  --aura-page-start: #e8f0ec;
+  --aura-page-end: #f4f7f5;
+  --aura-bubble-in: #ffffff;
+  --aura-thread: #dce8e2;
+  --aura-gold: #c9a962;
+}
+
+@theme inline {
+  --color-aura-primary: var(--aura-primary);
+  --color-aura-primary-dark: var(--aura-primary-dark);
+  --color-aura-text: var(--aura-text);
+  --color-aura-text-muted: var(--aura-text-muted);
+  --color-aura-page-start: var(--aura-page-start);
+  --color-aura-page-end: var(--aura-page-end);
+  --color-aura-bubble-in: var(--aura-bubble-in);
+  --color-aura-thread: var(--aura-thread);
+  --color-aura-gold: var(--aura-gold);
+  --font-serif: var(--font-lora);
+  --font-sans: var(--font-source-sans);
+}
+
+body {
+  background: linear-gradient(
+    165deg,
+    var(--aura-page-start) 0%,
+    var(--aura-page-end) 55%,
+    #eef4f0 100%
+  );
+  color: var(--aura-text);
+  font-family: var(--font-source-sans), sans-serif;
+}
+
+.chat-thread {
+  background-color: var(--aura-thread);
+  background-image:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(31, 110, 86, 0.06) 0%,
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(31, 110, 86, 0.05) 0%,
+      transparent 40%
+    );
+}
+
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-enter {
+  animation: fade-up 0.25s ease-out both;
+}
+
+.chat-markdown :where(p, ul, ol, h3, h4):first-child {
+  margin-top: 0;
+}
+
+.chat-markdown :where(p, ul, ol, h3, h4):last-child {
+  margin-bottom: 0;
+}
