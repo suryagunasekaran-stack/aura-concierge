@@ -3,6 +3,7 @@ import * as sessionStore from "../../src/session/store.js";
 import { resetAppointmentsForTests } from "../../src/data/appointments.js";
 import { resetFeedbackForTests } from "../../src/data/feedback.js";
 import { resetGuardrailsForTests } from "../../src/data/guardrails.js";
+import { resetConsultationsForTests } from "../../src/data/consultations.js";
 
 /**
  * Run one customer turn against a fresh (or seeded) session.
@@ -17,6 +18,7 @@ export async function runTurn(text, opts = {}) {
   resetAppointmentsForTests();
   resetFeedbackForTests();
   resetGuardrailsForTests();
+  resetConsultationsForTests();
   sessionStore.reset(sessionId);
 
   const session = sessionStore.get(sessionId);

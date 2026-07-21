@@ -262,6 +262,127 @@ export const schemas = [
   {
     type: "function",
     function: {
+      name: "reschedule_appointment",
+      description:
+        "Reschedule an existing appointment with a two-step confirm flow. When the customer provides a specific new date AND time, call this DIRECTLY to stage the reschedule — do NOT only call get_my_appointments or check_availability. First call with newDate and newTime (bookingId optional if only one upcoming appt) to stage; after explicit yes, call again with confirm: true. Use check_availability only if they have NOT yet chosen a new slot.",
+      parameters: {
+        type: "object",
+        properties: {
+          bookingId: { type: "string", description: "Booking id to reschedule" },
+          newDate: { type: "string", description: "New date YYYY-MM-DD" },
+          newTime: { type: "string", description: "New time HH:MM" },
+          confirm: {
+            type: "boolean",
+            description: "Set true only after customer explicitly confirms the new slot",
+          },
+          customerKey: {
+            type: "string",
+            description: "Customer phone-like key (scoped to session)",
+          },
+        },
+        required: ["customerKey"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_promotions",
+      description:
+        "Get current promotions, trial prices, and package deals from AURA's catalogue. ALWAYS use when customers ask about promos, discounts, trial prices, 'got cheaper anot', or first-time offers. Never invent discounts — use this tool. Optional filters: productId, packageId, or query.",
+      parameters: {
+        type: "object",
+        properties: {
+          productId: { type: "string", description: "Filter by product id" },
+          packageId: { type: "string", description: "Filter by package id" },
+          query: {
+            type: "string",
+            description: "Fuzzy search e.g. 'emerald peel trial', 'acne package'",
+          },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_faq",
+      description:
+        "Get answers to common clinic FAQs: preparation before treatment, downtime/aftercare, cancellation policy, payment, pregnancy safety, first visit, locations. Use for general how-to questions — not for prices (use get_promotions) or personalised medical advice. Pass topic or query; use listTopics: true to list FAQ categories.",
+      parameters: {
+        type: "object",
+        properties: {
+          topic: {
+            type: "string",
+            enum: [
+              "preparation",
+              "aftercare",
+              "safety",
+              "general",
+              "billing",
+              "booking",
+              "treatments",
+            ],
+            description: "FAQ category filter",
+          },
+          query: {
+            type: "string",
+            description: "Search FAQ by keyword, e.g. 'downtime', 'pregnant', 'cancel'",
+          },
+          listTopics: {
+            type: "boolean",
+            description: "Set true to list available FAQ topics",
+          },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "request_consultation",
+      description:
+        "Book a consultation request for first-timers or customers unsure which treatment to choose. Collect full name, email, skin concern, and preferred location (holland-village, palais, or either). Returns a consultation link. Use after get_product_info when the customer wants personalised advice or to speak with a specialist.",
+      parameters: {
+        type: "object",
+        properties: {
+          customerName: { type: "string" },
+          customerEmail: { type: "string" },
+          concern: {
+            type: "string",
+            description: "Skin concern or reason for consult, e.g. acne, anti-ageing",
+          },
+          preferredLocation: {
+            type: "string",
+            enum: ["holland-village", "palais", "either"],
+            description: "Preferred clinic location",
+          },
+          notes: {
+            type: "string",
+            description: "Optional extra notes from the customer",
+          },
+          customerKey: {
+            type: "string",
+            description: "Customer phone-like key (scoped to session)",
+          },
+        },
+        required: [
+          "customerName",
+          "customerEmail",
+          "concern",
+          "preferredLocation",
+          "customerKey",
+        ],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "get_product_info",
       description:
         "Get detailed info on AURA treatments and packages, recommend products by skin concern and age, or compare treatments side-by-side. ALWAYS use this (not reject_request) when customers ask which facial/treatment/package to choose, compare options, or describe skin concerns like acne, oily skin, pigmentation, or ageing — even if they mention age or skin conditions. Supports: single product lookup (productId/query), recommendations (concern + optional age), comparison (compareIds array), or listAll. Never invent treatments or prices — use this tool.",

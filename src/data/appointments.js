@@ -80,6 +80,21 @@ export function cancelAppointment(bookingId, customerKey) {
 }
 
 /**
+ * @param {string} bookingId
+ * @param {string} customerKey
+ * @param {string} newDate
+ * @param {string} newTime
+ */
+export function rescheduleAppointment(bookingId, customerKey, newDate, newTime) {
+  const appt = getAppointment(bookingId, customerKey);
+  if (!appt || appt.status === "cancelled") return null;
+  appt.date = newDate;
+  appt.time = newTime;
+  appt.status = "confirmed";
+  return appt;
+}
+
+/**
  * @param {{ customerKey: string, reason: string, transcriptSummary?: string }} data
  */
 export function createEscalation(data) {

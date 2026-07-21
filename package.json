@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node src/cli.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:new": "vitest run test/highValueTools.test.js"
   },
   "engines": {
     "node": ">=20"
