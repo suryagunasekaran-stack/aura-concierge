@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { DEMO_SESSION_ID } from "@/lib/constants";
 
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3000";
+const PRODUCTION_BACKEND_URL =
+  "https://aura-concierge-api-production.up.railway.app";
+
+const BACKEND_URL =
+  process.env.BACKEND_URL ??
+  (process.env.VERCEL ? PRODUCTION_BACKEND_URL : "http://localhost:3000");
 
 export async function POST(request: Request) {
   try {
