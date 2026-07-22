@@ -2,13 +2,29 @@
 
 Node.js + Express AI concierge that understands English and Singlish, calls internal tools for services, availability, booking (name + email required), customer info, feedback/surveys, and escalation. A CLI harness stands in for the future WhatsApp webhook; both share `processMessage()`.
 
+The Next.js UI includes chat plus a `/dashboard` for **intent classification** analytics and **knowledge training** (upload `.txt` files that get injected into the system prompt).
+
 ## Setup
 
 ```bash
 cp .env.example .env
-# Add your OpenAI API key to .env
+# Add your OpenAI API key and DATABASE_URL to .env
 npm install
 ```
+
+### Database (Postgres)
+
+Local Docker:
+
+```bash
+npm run db:up
+# DATABASE_URL=postgresql://aura:aura@localhost:5432/aura_concierge
+npm run db:migrate
+```
+
+Or point `DATABASE_URL` at Neon (Vercel Marketplace) / any Postgres and run `npm run db:migrate`.
+
+Without `DATABASE_URL`, chat still works; intent logging and `/training` APIs return 503.
 
 ## Run
 
@@ -26,8 +42,19 @@ Type a message and press Enter. Default session id is `+6591234567` (a seeded cu
 npm start
 ```
 
-- `GET /health` — health check
+- `GET /health` — health check (`database: true|false`)
 - `POST /message` — body `{ "sessionId": "+6591234567", "text": "What treatments do you offer?" }`
+- `GET /intents`, `GET /intents/stats` — classified turns
+- `GET|POST|DELETE /training`, `DELETE /training/:id` — knowledge docs
+
+**Web UI:**
+
+```bash
+npm run web:dev
+```
+
+- `/` — chat
+- `/dashboard` — intents + knowledge (upload `samples/aftercare.txt`)
 
 ## Test
 

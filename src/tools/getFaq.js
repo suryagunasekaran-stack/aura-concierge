@@ -20,7 +20,8 @@ export async function getFaq(args = {}, _ctx) {
         ok: false,
         reason: "not_found",
         availableTopics: listFaqTopics(),
-        message: "No FAQ match — offer to escalate or suggest a consultation.",
+        message:
+          "No FAQ match in the built-in catalog. Check ADDITIONAL CLINIC KNOWLEDGE in your system prompt before telling the customer you cannot help.",
       };
     }
 

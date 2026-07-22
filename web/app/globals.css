@@ -96,6 +96,15 @@ body {
   margin-top: 0;
 }
 
-.chat-markdown :where(p, ul, ol, h3, h4):last-child {
-  margin-bottom: 0;
+.training-progress {
+  animation: training-fill 5s ease-in-out forwards;
+}
+
+@keyframes training-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }

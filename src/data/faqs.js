@@ -2,30 +2,6 @@
 
 export const faqs = [
   {
-    id: "prep-before-facial",
-    topic: "preparation",
-    question: "How should I prepare before a facial?",
-    answer:
-      "Arrive with a clean face if possible. Avoid retinol, strong acids, or exfoliating treatments 2–3 days before peels or intensive facials. Let us know about allergies, pregnancy, or recent procedures when booking.",
-    tags: ["facial", "preparation", "before treatment"],
-  },
-  {
-    id: "downtime-peel",
-    topic: "aftercare",
-    question: "Is there downtime after the Emerald Peel?",
-    answer:
-      "Signature AURA Emerald Peel has zero to minimal downtime. You may have mild redness for a few hours. Avoid direct sun and use SPF. Your specialist will advise based on your skin.",
-    tags: ["emerald peel", "downtime", "aftercare"],
-  },
-  {
-    id: "downtime-laser",
-    topic: "aftercare",
-    question: "What aftercare is needed after Acne Laser?",
-    answer:
-      "Avoid sun exposure and use SPF daily. Skip harsh scrubs for a few days. Mild redness or warmth is normal. Doctor-administered — follow the post-treatment plan given at your session.",
-    tags: ["laser", "acne laser", "aftercare"],
-  },
-  {
     id: "pregnancy",
     topic: "safety",
     question: "Can I do treatments if I'm pregnant or breastfeeding?",

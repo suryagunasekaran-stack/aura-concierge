@@ -28,16 +28,16 @@ describe("high-value tools (unit)", () => {
     expect(result.promotions[0].promoPriceSGD).toBe(128);
   });
 
-  it("get_faq answers downtime question", async () => {
-    const result = await getFaq({ query: "downtime emerald peel" }, ctx);
+  it("get_faq answers payment question", async () => {
+    const result = await getFaq({ query: "payment methods" }, ctx);
     expect(result.ok).toBe(true);
-    expect(result.faqs[0].answer.toLowerCase()).toMatch(/downtime|redness/);
+    expect(result.faqs[0].answer.toLowerCase()).toMatch(/paynow|card/);
   });
 
   it("get_faq lists topics", async () => {
     const result = await getFaq({ listTopics: true }, ctx);
     expect(result.ok).toBe(true);
-    expect(result.topics).toContain("aftercare");
+    expect(result.topics).toContain("billing");
   });
 
   it("request_consultation creates consult with booking link", async () => {
@@ -88,7 +88,7 @@ describe.skipIf(!hasKey)("high-value tools (live LLM)", () => {
   it("FAQ question → get_faq", async () => {
     await withRetry(async () => {
       const { reply, toolCalls } = await runTurn(
-        "Is there downtime after the emerald peel?"
+        "What payment methods do you accept?"
       );
       expect(toolCalls).toContain("get_faq");
       expect(reply.length).toBeGreaterThan(0);

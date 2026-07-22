@@ -5,6 +5,13 @@ import { runToolLoop } from "./llm/loop.js";
 import { validateOutput } from "./util/validateOutput.js";
 import { checkInputGuard } from "./util/inputGuard.js";
 import { logger } from "./util/logger.js";
+import { classifyIntent } from "./intent/classify.js";
+import { logIntentAsync } from "./intent/store.js";
+import {
+  buildKnowledgeBlock,
+  listTrainingDocumentsFull,
+} from "./training/store.js";
+import { noTrainingKnowledgeBlock } from "./training/noTrainingBlock.js";
 
 const RESET_PHRASES = ["start over", "reset", "new booking", "restart lah"];
 
@@ -44,6 +51,13 @@ export async function processMessage(sessionId, userText) {
 
   const inputGuard = checkInputGuard(trimmed, { customerKey: sessionId });
   if (inputGuard.blocked) {
+    logIntentAsync({
+      sessionId,
+      userText: trimmed,
+      toolCalls: ["input_guard"],
+      reply: inputGuard.reply,
+      classify: classifyIntent,
+    });
     return {
       reply: inputGuard.reply,
       toolCalls: ["input_guard"],
@@ -62,8 +76,18 @@ export async function processMessage(sessionId, userText) {
   const history = Array.isArray(session.history) ? session.history : [];
   const cappedHistory = history.slice(-MAX_HISTORY_MESSAGES);
 
+  const trainingDocs = await listTrainingDocumentsFull();
+  const knowledgeBlock = buildKnowledgeBlock(trainingDocs);
+  const effectiveSystem =
+    trainingDocs.length > 0
+      ? `${systemPrompt}${knowledgeBlock}`
+      : `${systemPrompt}${noTrainingKnowledgeBlock}`;
+  if (trainingDocs.length > 0) {
+    logger.info(`Loaded ${trainingDocs.length} training document(s) for session ${sessionId}`);
+  }
+
   const messages = [
-    { role: "system", content: systemPrompt },
+    { role: "system", content: effectiveSystem },
     ...cappedHistory,
     { role: "user", content: trimmed },
   ];
@@ -83,6 +107,14 @@ export async function processMessage(sessionId, userText) {
   ].slice(-MAX_HISTORY_MESSAGES);
 
   sessionStore.set(sessionId, session);
+
+  logIntentAsync({
+    sessionId,
+    userText: trimmed,
+    toolCalls: finalToolCalls,
+    reply,
+    classify: classifyIntent,
+  });
 
   return { reply, toolCalls: finalToolCalls };
 }

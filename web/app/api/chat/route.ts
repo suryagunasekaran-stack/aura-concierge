@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEMO_SESSION_ID } from "@/lib/constants";
-
-const PRODUCTION_BACKEND_URL =
-  "https://aura-concierge-api-production.up.railway.app";
-
-const BACKEND_URL =
-  process.env.BACKEND_URL ??
-  (process.env.VERCEL ? PRODUCTION_BACKEND_URL : "http://localhost:3000");
+import { proxyBackend } from "@/lib/backend";
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "text is required" }, { status: 400 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/message`, {
+    const response = await proxyBackend("/message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
