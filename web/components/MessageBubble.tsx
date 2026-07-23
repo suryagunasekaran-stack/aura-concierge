@@ -24,6 +24,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           variant={isUser ? "user" : "assistant"}
         />
         <p
+          suppressHydrationWarning
           className={`mt-1.5 text-right text-[11px] ${
             isUser ? "text-white/70" : "text-aura-text-muted"
           }`}

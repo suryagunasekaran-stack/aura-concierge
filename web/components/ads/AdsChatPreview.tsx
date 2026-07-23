@@ -89,7 +89,7 @@ function SponsoredAdCard({
           >
             {CTA_LABELS[creative.cta]}
           </button>
-          <p className="mt-2 text-right text-[11px] text-aura-text-muted">
+          <p suppressHydrationWarning className="mt-2 text-right text-[11px] text-aura-text-muted">
             {formatTime(timestamp)}
           </p>
         </div>
@@ -122,6 +122,7 @@ function OrganicBubble({
       >
         <p className="whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
         <p
+          suppressHydrationWarning
           className={`mt-1.5 text-right text-[11px] ${
             isUser ? "text-white/70" : "text-aura-text-muted"
           }`}

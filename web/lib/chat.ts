@@ -8,11 +8,12 @@ export type ChatMessage = {
 };
 
 export function formatTime(date: Date): string {
-  return date.toLocaleTimeString("en-SG", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const hours24 = date.getHours();
+  const minutes = date.getMinutes();
+  const period = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 || 12;
+  const minutePart = String(minutes).padStart(2, "0");
+  return `${hours12}:${minutePart} ${period}`;
 }
 
 export function createMessage(

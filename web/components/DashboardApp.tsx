@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { DemoNav } from "@/components/DemoNav";
 import { TrainingLoader, TRAINING_MS, sleep } from "@/components/TrainingLoader";
 
 type Tab = "intents" | "knowledge";
@@ -221,7 +221,7 @@ export function DashboardApp() {
             Intent analytics and knowledge training demo
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => void refresh()}
@@ -230,18 +230,7 @@ export function DashboardApp() {
           >
             Refresh
           </button>
-          <Link
-            href="/ads"
-            className="rounded-full border border-aura-primary/25 bg-white/70 px-3 py-1.5 text-sm text-aura-primary transition hover:bg-white"
-          >
-            Ads · Meta &amp; WhatsApp
-          </Link>
-          <Link
-            href="/"
-            className="rounded-full bg-aura-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-aura-primary-dark"
-          >
-            Open chat
-          </Link>
+          <DemoNav current="dashboard" />
         </div>
       </header>
 

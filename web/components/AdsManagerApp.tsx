@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import Link from "next/link";
+import { DemoNav } from "@/components/DemoNav";
 import { AdsChatPreview } from "@/components/ads/AdsChatPreview";
 import { AdsMetricsPanel } from "@/components/ads/AdsMetricsPanel";
 import { CampaignCreator } from "@/components/ads/CampaignCreator";
@@ -80,20 +80,7 @@ export function AdsManagerApp() {
             monitor mock insights, and create campaigns.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/"
-            className="rounded-full border border-aura-primary/25 bg-white/70 px-3 py-1.5 text-sm text-aura-primary transition hover:bg-white"
-          >
-            Open chat
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-full bg-aura-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-aura-primary-dark"
-          >
-            Dashboard
-          </Link>
-        </div>
+        <DemoNav current="ads" />
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2 lg:grid-rows-2 lg:gap-5 lg:min-h-[720px]">
