@@ -221,7 +221,7 @@ export function DashboardApp() {
             Intent analytics and knowledge training demo
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void refresh()}
@@ -230,6 +230,12 @@ export function DashboardApp() {
           >
             Refresh
           </button>
+          <Link
+            href="/ads"
+            className="rounded-full border border-aura-primary/25 bg-white/70 px-3 py-1.5 text-sm text-aura-primary transition hover:bg-white"
+          >
+            Ads · Meta &amp; WhatsApp
+          </Link>
           <Link
             href="/"
             className="rounded-full bg-aura-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-aura-primary-dark"

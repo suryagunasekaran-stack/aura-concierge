@@ -118,12 +118,21 @@ export function ChatApp() {
         <p className="mt-2 text-sm text-aura-text-muted">
           AI Concierge · Demo as {DEMO_CUSTOMER_NAME}
         </p>
-        <Link
-          href="/dashboard"
-          className="mt-3 inline-block text-xs font-medium text-aura-primary underline-offset-2 hover:underline"
-        >
-          Dashboard · intents &amp; knowledge
-        </Link>
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <Link
+            href="/dashboard"
+            className="text-xs font-medium text-aura-primary underline-offset-2 hover:underline"
+          >
+            Dashboard · intents &amp; knowledge
+          </Link>
+          <span className="text-xs text-aura-text-muted">·</span>
+          <Link
+            href="/ads"
+            className="text-xs font-medium text-aura-primary underline-offset-2 hover:underline"
+          >
+            Ads · Meta &amp; WhatsApp
+          </Link>
+        </div>
       </header>
 
       <div className="flex w-full max-w-[460px] flex-1 flex-col overflow-hidden rounded-2xl border border-aura-primary/12 bg-white/60 shadow-[0_20px_60px_rgba(31,110,86,0.08)] backdrop-blur-sm">
