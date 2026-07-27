@@ -9,22 +9,61 @@ import { TypingIndicator } from "@/components/TypingIndicator";
 import { DEMO_CUSTOMER_NAME, WELCOME_MESSAGE } from "@/lib/constants";
 import { createMessage, type ChatMessage } from "@/lib/chat";
 import { EXAMPLE_PROMPTS, RESET_MESSAGE } from "@/lib/examples";
+import {
+  applyBrandingToDocument,
+  fetchBranding,
+  knowledgeDocsFromBranding,
+  readBrandingSlugFromLocation,
+  sessionIdForBranding,
+  welcomeFromBranding,
+  type MindboxsBranding,
+} from "@/lib/branding";
 
 const PLACEHOLDER_ROTATE_MS = 4000;
 
-function initialMessages(): ChatMessage[] {
-  return [createMessage("assistant", WELCOME_MESSAGE)];
+function initialMessages(welcome = WELCOME_MESSAGE): ChatMessage[] {
+  return [createMessage("assistant", welcome)];
 }
 
 export function ChatApp() {
+  const [brandingSlug, setBrandingSlug] = useState<string | null>(null);
+  const [branding, setBranding] = useState<MindboxsBranding | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [ready, setReady] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
-  const rotatingPlaceholder = EXAMPLE_PROMPTS[placeholderIndex]?.text ?? "Type a message…";
+  const rotatingPlaceholder =
+    EXAMPLE_PROMPTS[placeholderIndex]?.text ?? "Type a message…";
+  const clinicName = branding?.copy?.clinicName || "Aura Concierge";
+
+  useEffect(() => {
+    const slug = readBrandingSlugFromLocation();
+    setBrandingSlug(slug);
+    let cancelled = false;
+
+    (async () => {
+      if (!slug) {
+        setReady(true);
+        return;
+      }
+      const data = await fetchBranding(slug);
+      if (cancelled) return;
+      if (data) {
+        setBranding(data);
+        applyBrandingToDocument(data);
+        setMessages(initialMessages(welcomeFromBranding(data)));
+      }
+      setReady(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const thread = threadRef.current;
@@ -34,82 +73,99 @@ export function ChatApp() {
 
   useEffect(() => {
     if (input.trim()) return;
-
     const interval = setInterval(() => {
       setPlaceholderIndex((current) => (current + 1) % EXAMPLE_PROMPTS.length);
     }, PLACEHOLDER_ROTATE_MS);
-
     return () => clearInterval(interval);
   }, [input]);
 
-  const sendMessage = useCallback(async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || isPending) return;
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || isPending) return;
 
-    const userMessage = createMessage("user", trimmed);
-    setMessages((current) => [...current, userMessage]);
-    setInput("");
-    setError(null);
-    setIsPending(true);
+      setMessages((current) => [...current, createMessage("user", trimmed)]);
+      setInput("");
+      setError(null);
+      setIsPending(true);
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: trimmed }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Something went wrong");
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: trimmed,
+            brandingSlug,
+            sessionId: sessionIdForBranding(brandingSlug),
+            knowledgeDocs: knowledgeDocsFromBranding(branding),
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error ?? "Something went wrong");
+        }
+        setMessages((current) => [
+          ...current,
+          createMessage("assistant", data.reply),
+        ]);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Unable to reach the assistant",
+        );
+      } finally {
+        setIsPending(false);
       }
-
-      setMessages((current) => [
-        ...current,
-        createMessage("assistant", data.reply),
-      ]);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unable to reach the assistant";
-      setError(message);
-    } finally {
-      setIsPending(false);
-    }
-  }, [isPending]);
+    },
+    [isPending, brandingSlug, branding],
+  );
 
   async function handleRestart() {
     if (isPending) return;
-
-    setMessages(initialMessages());
+    setMessages(initialMessages(welcomeFromBranding(branding)));
     setInput("");
     setError(null);
     setPlaceholderIndex(0);
     setIsPending(true);
-
     try {
       await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: RESET_MESSAGE }),
+        body: JSON.stringify({
+          text: RESET_MESSAGE,
+          brandingSlug,
+          sessionId: sessionIdForBranding(brandingSlug),
+          knowledgeDocs: knowledgeDocsFromBranding(branding),
+        }),
       });
     } catch {
-      // UI is already reset; backend reset is best-effort
+      // best-effort
     } finally {
       setIsPending(false);
     }
   }
 
-  function handleSend() {
-    void sendMessage(input);
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-aura-text-muted">
+        Loading…
+      </div>
+    );
   }
 
   return (
     <div className="flex min-h-screen flex-col items-center px-4 py-10">
       <header className="mb-8 text-center">
         <div className="flex items-center justify-center gap-3">
+          {branding?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={branding.logoUrl}
+              alt=""
+              className="h-10 w-auto object-contain"
+            />
+          ) : null}
           <h1 className="font-serif text-4xl tracking-[0.18em] text-aura-primary">
-            AURA
+            {clinicName.length > 24 ? clinicName.slice(0, 24) : clinicName}
           </h1>
           <span className="rounded border border-aura-primary/25 bg-white/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-aura-primary">
             MVP
@@ -117,6 +173,7 @@ export function ChatApp() {
         </div>
         <p className="mt-2 text-sm text-aura-text-muted">
           AI Concierge · Demo as {DEMO_CUSTOMER_NAME}
+          {brandingSlug ? ` · ${brandingSlug}` : ""}
         </p>
         <DemoNav current="chat" variant="inline" />
       </header>
@@ -125,34 +182,35 @@ export function ChatApp() {
         <div className="border-b border-aura-primary/10 bg-aura-primary px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
-                A
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-sm font-semibold text-white">
+                {branding?.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={branding.logoUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  "A"
+                )}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-white">Aura Concierge</p>
+                <p className="truncate text-sm font-medium text-white">
+                  {clinicName}
+                </p>
                 <p className="text-xs text-white/75">
                   {isPending ? "typing…" : "online"}
                 </p>
               </div>
             </div>
-            <div className="flex shrink-0 gap-1.5">
-              <button
-                type="button"
-                onClick={() => void handleRestart()}
-                disabled={isPending}
-                className="rounded-full border border-white/20 px-2.5 py-1 text-[11px] font-medium text-white/90 transition hover:bg-white/10 disabled:opacity-50"
-              >
-                Start over
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleRestart()}
-                disabled={isPending}
-                className="rounded-full border border-white/20 px-2.5 py-1 text-[11px] font-medium text-white/90 transition hover:bg-white/10 disabled:opacity-50"
-              >
-                Restart
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => void handleRestart()}
+              disabled={isPending}
+              className="rounded-full border border-white/20 px-2.5 py-1 text-[11px] font-medium text-white/90 transition hover:bg-white/10 disabled:opacity-50"
+            >
+              Restart
+            </button>
           </div>
         </div>
 
@@ -181,7 +239,7 @@ export function ChatApp() {
         <Composer
           value={input}
           onChange={setInput}
-          onSend={handleSend}
+          onSend={() => void sendMessage(input)}
           disabled={isPending}
           placeholder={input.trim() ? "Type a message…" : rotatingPlaceholder}
         />

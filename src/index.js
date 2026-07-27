@@ -18,7 +18,7 @@ import {
 requireApiKey();
 
 const app = express();
-app.use(express.json({ limit: "200kb" }));
+app.use(express.json({ limit: "2mb" }));
 
 function requireDb(res) {
   if (!isDbConfigured()) {
@@ -43,13 +43,14 @@ app.post("/message", async (req, res) => {
   try {
     const sessionId = req.body?.sessionId;
     const text = req.body?.text;
+    const knowledgeDocs = req.body?.knowledgeDocs;
     if (!sessionId || typeof sessionId !== "string") {
       return res.status(400).json({ error: "sessionId is required" });
     }
     if (typeof text !== "string") {
       return res.status(400).json({ error: "text is required" });
     }
-    const result = await processMessage(sessionId, text);
+    const result = await processMessage(sessionId, text, { knowledgeDocs });
     return res.json(result);
   } catch (err) {
     logger.error("POST /message failed:", err);
