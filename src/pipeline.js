@@ -29,9 +29,10 @@ function checkRateLimit(_sessionId) {
  *
  * @param {string} sessionId
  * @param {string} userText
+ * @param {{ knowledgeDocs?: { filename: string, content: string }[] }} [options]
  * @returns {Promise<{ reply: string, toolCalls: string[] }>}
  */
-export async function processMessage(sessionId, userText) {
+export async function processMessage(sessionId, userText, options = {}) {
   const trimmed = typeof userText === "string" ? userText.trim() : "";
 
   if (!trimmed) {
@@ -76,14 +77,31 @@ export async function processMessage(sessionId, userText) {
   const history = Array.isArray(session.history) ? session.history : [];
   const cappedHistory = history.slice(-MAX_HISTORY_MESSAGES);
 
-  const trainingDocs = await listTrainingDocumentsFull();
+  /** Prefer Mindboxs per-client knowledge when provided; else DB training. */
+  const overrideDocs = Array.isArray(options.knowledgeDocs)
+    ? options.knowledgeDocs.filter(
+        (d) => d && typeof d.content === "string" && d.content.trim(),
+      )
+    : null;
+
+  const trainingDocs =
+    overrideDocs && overrideDocs.length > 0
+      ? overrideDocs.map((d) => ({
+          filename: d.filename || "knowledge.txt",
+          content: d.content,
+        }))
+      : await listTrainingDocumentsFull();
+
   const knowledgeBlock = buildKnowledgeBlock(trainingDocs);
   const effectiveSystem =
     trainingDocs.length > 0
       ? `${systemPrompt}${knowledgeBlock}`
       : `${systemPrompt}${noTrainingKnowledgeBlock}`;
   if (trainingDocs.length > 0) {
-    logger.info(`Loaded ${trainingDocs.length} training document(s) for session ${sessionId}`);
+    logger.info(
+      `Loaded ${trainingDocs.length} training document(s) for session ${sessionId}` +
+        (overrideDocs ? " (client override)" : ""),
+    );
   }
 
   const messages = [
@@ -98,8 +116,6 @@ export async function processMessage(sessionId, userText) {
     ? [...toolCalls, "escalate_to_human"]
     : toolCalls;
 
-  // Persist only user + final assistant (not full tool transcript) for MVP history.
-  // Tool turns remain in the LLM loop messages for this turn only.
   session.history = [
     ...history,
     { role: "user", content: trimmed },

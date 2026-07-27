@@ -11,12 +11,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "text is required" }, { status: 400 });
     }
 
+    const brandingSlug =
+      typeof body?.brandingSlug === "string" ? body.brandingSlug.trim() : "";
+    const sessionId =
+      typeof body?.sessionId === "string" && body.sessionId.trim()
+        ? body.sessionId.trim()
+        : brandingSlug
+          ? `${DEMO_SESSION_ID}::${brandingSlug}`
+          : DEMO_SESSION_ID;
+
+    const knowledgeDocs = Array.isArray(body?.knowledgeDocs)
+      ? body.knowledgeDocs
+      : undefined;
+
     const response = await proxyBackend("/message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        sessionId: DEMO_SESSION_ID,
+        sessionId,
         text: text.trim(),
+        knowledgeDocs,
       }),
     });
 
