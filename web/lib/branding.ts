@@ -7,6 +7,9 @@ export type MindboxsBranding = {
   copy: {
     welcomeMessage?: string;
     clinicName?: string;
+    tagline?: string;
+    assistantName?: string;
+    avatarInitial?: string;
   };
   knowledge: { id: string; filename: string; content: string; byteSize: number }[];
   updatedAt: string;
@@ -41,8 +44,11 @@ export function readBrandingSlugFromLocation(): string | null {
 export async function fetchBranding(
   slug: string,
 ): Promise<MindboxsBranding | null> {
-  const url = `${brandingHost()}/api/branding/${encodeURIComponent(slug)}`;
-  const res = await fetch(url, { cache: "no-store" });
+  const url = new URL(
+    `${brandingHost()}/api/branding/${encodeURIComponent(slug)}`,
+  );
+  url.searchParams.set("_", String(Date.now()));
+  const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) return null;
   return (await res.json()) as MindboxsBranding;
 }
@@ -62,6 +68,33 @@ export function sessionIdForBranding(slug: string | null): string {
 
 export function welcomeFromBranding(branding: MindboxsBranding | null): string {
   return branding?.copy?.welcomeMessage?.trim() || WELCOME_MESSAGE;
+}
+
+export function clinicNameFromBranding(
+  branding: MindboxsBranding | null,
+): string {
+  return branding?.copy?.clinicName?.trim() || "Aura Concierge";
+}
+
+export function assistantNameFromBranding(
+  branding: MindboxsBranding | null,
+): string {
+  return (
+    branding?.copy?.assistantName?.trim() ||
+    clinicNameFromBranding(branding)
+  );
+}
+
+export function taglineFromBranding(branding: MindboxsBranding | null): string {
+  return branding?.copy?.tagline?.trim() || "AI Concierge · Demo as Mei Ling";
+}
+
+export function avatarInitialFromBranding(
+  branding: MindboxsBranding | null,
+): string {
+  const initial = branding?.copy?.avatarInitial?.trim();
+  if (initial) return initial.slice(0, 2).toUpperCase();
+  return clinicNameFromBranding(branding).charAt(0).toUpperCase() || "A";
 }
 
 export function knowledgeDocsFromBranding(branding: MindboxsBranding | null) {

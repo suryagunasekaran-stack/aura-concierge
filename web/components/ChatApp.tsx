@@ -6,15 +6,19 @@ import { Composer } from "@/components/Composer";
 import { ExamplePrompts } from "@/components/ExamplePrompts";
 import { MessageBubble } from "@/components/MessageBubble";
 import { TypingIndicator } from "@/components/TypingIndicator";
-import { DEMO_CUSTOMER_NAME, WELCOME_MESSAGE } from "@/lib/constants";
+import { WELCOME_MESSAGE } from "@/lib/constants";
 import { createMessage, type ChatMessage } from "@/lib/chat";
 import { EXAMPLE_PROMPTS, RESET_MESSAGE } from "@/lib/examples";
 import {
   applyBrandingToDocument,
+  assistantNameFromBranding,
+  avatarInitialFromBranding,
+  clinicNameFromBranding,
   fetchBranding,
   knowledgeDocsFromBranding,
   readBrandingSlugFromLocation,
   sessionIdForBranding,
+  taglineFromBranding,
   welcomeFromBranding,
   type MindboxsBranding,
 } from "@/lib/branding";
@@ -38,7 +42,10 @@ export function ChatApp() {
 
   const rotatingPlaceholder =
     EXAMPLE_PROMPTS[placeholderIndex]?.text ?? "Type a message…";
-  const clinicName = branding?.copy?.clinicName || "Aura Concierge";
+  const clinicName = clinicNameFromBranding(branding);
+  const assistantName = assistantNameFromBranding(branding);
+  const tagline = taglineFromBranding(branding);
+  const avatarInitial = avatarInitialFromBranding(branding);
 
   useEffect(() => {
     const slug = readBrandingSlugFromLocation();
@@ -172,7 +179,7 @@ export function ChatApp() {
           </span>
         </div>
         <p className="mt-2 text-sm text-aura-text-muted">
-          AI Concierge · Demo as {DEMO_CUSTOMER_NAME}
+          {tagline}
           {brandingSlug ? ` · ${brandingSlug}` : ""}
         </p>
         <DemoNav current="chat" variant="inline" />
@@ -191,12 +198,12 @@ export function ChatApp() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  "A"
+                  avatarInitial
                 )}
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-white">
-                  {clinicName}
+                  {assistantName}
                 </p>
                 <p className="text-xs text-white/75">
                   {isPending ? "typing…" : "online"}
