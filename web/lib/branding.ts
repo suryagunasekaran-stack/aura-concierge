@@ -1,15 +1,21 @@
 import { DEMO_SESSION_ID, WELCOME_MESSAGE } from "@/lib/constants";
 
 export type MindboxsBranding = {
-  version: 1;
+  version: 1 | 2;
   colors: Record<string, string | undefined>;
   logoUrl?: string | null;
+  faviconUrl?: string | null;
   copy: {
     welcomeMessage?: string;
     clinicName?: string;
     tagline?: string;
     assistantName?: string;
     avatarInitial?: string;
+    documentTitle?: string;
+  };
+  prompts?: {
+    systemPrompt?: string;
+    persona?: string;
   };
   knowledge: { id: string; filename: string; content: string; byteSize: number }[];
   updatedAt: string;
@@ -59,6 +65,26 @@ export function applyBrandingToDocument(branding: MindboxsBranding) {
     const value = branding.colors?.[key];
     if (value) root.style.setProperty(cssVar, value);
   }
+
+  const title =
+    branding.copy?.documentTitle?.trim() ||
+    branding.copy?.clinicName?.trim() ||
+    branding.copy?.assistantName?.trim();
+  if (title) {
+    document.title = title;
+  }
+
+  const iconHref =
+    branding.faviconUrl?.trim() || branding.logoUrl?.trim() || "";
+  if (iconHref) {
+    let link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = iconHref;
+  }
 }
 
 export function sessionIdForBranding(slug: string | null): string {
@@ -66,35 +92,59 @@ export function sessionIdForBranding(slug: string | null): string {
   return `${DEMO_SESSION_ID}::${slug}`;
 }
 
-export function welcomeFromBranding(branding: MindboxsBranding | null): string {
-  return branding?.copy?.welcomeMessage?.trim() || WELCOME_MESSAGE;
+/**
+ * Welcome message. When a branding slug is active, never fall back to Aura copy.
+ */
+export function welcomeFromBranding(
+  branding: MindboxsBranding | null,
+  opts?: { brandingSlug?: string | null },
+): string {
+  const fromProfile = branding?.copy?.welcomeMessage?.trim();
+  if (fromProfile) return fromProfile;
+  if (opts?.brandingSlug) {
+    return "Hi — I'm your AI concierge. How can I help today?";
+  }
+  return WELCOME_MESSAGE;
 }
 
 export function clinicNameFromBranding(
   branding: MindboxsBranding | null,
+  opts?: { brandingSlug?: string | null },
 ): string {
-  return branding?.copy?.clinicName?.trim() || "Aura Concierge";
+  const name = branding?.copy?.clinicName?.trim();
+  if (name) return name;
+  if (opts?.brandingSlug) return "Concierge";
+  return "Aura Concierge";
 }
 
 export function assistantNameFromBranding(
   branding: MindboxsBranding | null,
+  opts?: { brandingSlug?: string | null },
 ): string {
-  return (
-    branding?.copy?.assistantName?.trim() ||
-    clinicNameFromBranding(branding)
-  );
+  const name = branding?.copy?.assistantName?.trim();
+  if (name) return name;
+  return clinicNameFromBranding(branding, opts);
 }
 
-export function taglineFromBranding(branding: MindboxsBranding | null): string {
-  return branding?.copy?.tagline?.trim() || "AI Concierge · Demo as Mei Ling";
+export function taglineFromBranding(
+  branding: MindboxsBranding | null,
+  opts?: { brandingSlug?: string | null },
+): string {
+  const tag = branding?.copy?.tagline?.trim();
+  if (tag) return tag;
+  if (opts?.brandingSlug) return "AI Concierge";
+  return "AI Concierge · Demo as Mei Ling";
 }
 
 export function avatarInitialFromBranding(
   branding: MindboxsBranding | null,
+  opts?: { brandingSlug?: string | null },
 ): string {
   const initial = branding?.copy?.avatarInitial?.trim();
   if (initial) return initial.slice(0, 2).toUpperCase();
-  return clinicNameFromBranding(branding).charAt(0).toUpperCase() || "A";
+  return (
+    clinicNameFromBranding(branding, opts).charAt(0).toUpperCase() || "C"
+  );
 }
 
 export function knowledgeDocsFromBranding(branding: MindboxsBranding | null) {

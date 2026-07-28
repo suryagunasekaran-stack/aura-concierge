@@ -6,7 +6,6 @@ import { Composer } from "@/components/Composer";
 import { ExamplePrompts } from "@/components/ExamplePrompts";
 import { MessageBubble } from "@/components/MessageBubble";
 import { TypingIndicator } from "@/components/TypingIndicator";
-import { WELCOME_MESSAGE } from "@/lib/constants";
 import { createMessage, type ChatMessage } from "@/lib/chat";
 import { EXAMPLE_PROMPTS, RESET_MESSAGE } from "@/lib/examples";
 import {
@@ -25,14 +24,15 @@ import {
 
 const PLACEHOLDER_ROTATE_MS = 4000;
 
-function initialMessages(welcome = WELCOME_MESSAGE): ChatMessage[] {
+function initialMessages(welcome: string): ChatMessage[] {
   return [createMessage("assistant", welcome)];
 }
 
 export function ChatApp() {
   const [brandingSlug, setBrandingSlug] = useState<string | null>(null);
   const [branding, setBranding] = useState<MindboxsBranding | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [brandingError, setBrandingError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,12 +40,14 @@ export function ChatApp() {
   const [ready, setReady] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
+  const brandOpts = { brandingSlug };
   const rotatingPlaceholder =
     EXAMPLE_PROMPTS[placeholderIndex]?.text ?? "Type a message…";
-  const clinicName = clinicNameFromBranding(branding);
-  const assistantName = assistantNameFromBranding(branding);
-  const tagline = taglineFromBranding(branding);
-  const avatarInitial = avatarInitialFromBranding(branding);
+  const clinicName = clinicNameFromBranding(branding, brandOpts);
+  const assistantName = assistantNameFromBranding(branding, brandOpts);
+  const tagline = taglineFromBranding(branding, brandOpts);
+  const avatarInitial = avatarInitialFromBranding(branding, brandOpts);
+  const isTenant = Boolean(brandingSlug);
 
   useEffect(() => {
     const slug = readBrandingSlugFromLocation();
@@ -54,6 +56,9 @@ export function ChatApp() {
 
     (async () => {
       if (!slug) {
+        setMessages(
+          initialMessages(welcomeFromBranding(null, { brandingSlug: null })),
+        );
         setReady(true);
         return;
       }
@@ -62,7 +67,17 @@ export function ChatApp() {
       if (data) {
         setBranding(data);
         applyBrandingToDocument(data);
-        setMessages(initialMessages(welcomeFromBranding(data)));
+        setMessages(
+          initialMessages(welcomeFromBranding(data, { brandingSlug: slug })),
+        );
+        setBrandingError(null);
+      } else {
+        setBrandingError(
+          `Could not load branding profile “${slug}”. Check the Mindboxs host.`,
+        );
+        setMessages(
+          initialMessages(welcomeFromBranding(null, { brandingSlug: slug })),
+        );
       }
       setReady(true);
     })();
@@ -79,12 +94,12 @@ export function ChatApp() {
   }, [messages, isPending]);
 
   useEffect(() => {
-    if (input.trim()) return;
+    if (input.trim() || isTenant) return;
     const interval = setInterval(() => {
       setPlaceholderIndex((current) => (current + 1) % EXAMPLE_PROMPTS.length);
     }, PLACEHOLDER_ROTATE_MS);
     return () => clearInterval(interval);
-  }, [input]);
+  }, [input, isTenant]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -128,7 +143,9 @@ export function ChatApp() {
 
   async function handleRestart() {
     if (isPending) return;
-    setMessages(initialMessages(welcomeFromBranding(branding)));
+    setMessages(
+      initialMessages(welcomeFromBranding(branding, brandOpts)),
+    );
     setInput("");
     setError(null);
     setPlaceholderIndex(0);
@@ -174,15 +191,17 @@ export function ChatApp() {
           <h1 className="font-serif text-4xl tracking-[0.18em] text-aura-primary">
             {clinicName.length > 24 ? clinicName.slice(0, 24) : clinicName}
           </h1>
-          <span className="rounded border border-aura-primary/25 bg-white/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-aura-primary">
-            MVP
-          </span>
+          {!isTenant ? (
+            <span className="rounded border border-aura-primary/25 bg-white/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-aura-primary">
+              MVP
+            </span>
+          ) : null}
         </div>
-        <p className="mt-2 text-sm text-aura-text-muted">
-          {tagline}
-          {brandingSlug ? ` · ${brandingSlug}` : ""}
-        </p>
-        <DemoNav current="chat" variant="inline" />
+        <p className="mt-2 text-sm text-aura-text-muted">{tagline}</p>
+        {brandingError ? (
+          <p className="mt-2 text-xs text-red-700">{brandingError}</p>
+        ) : null}
+        {!isTenant ? <DemoNav current="chat" variant="inline" /> : null}
       </header>
 
       <div className="flex w-full max-w-[460px] flex-1 flex-col overflow-hidden rounded-2xl border border-aura-primary/12 bg-white/60 shadow-[0_20px_60px_rgba(31,110,86,0.08)] backdrop-blur-sm">
@@ -237,18 +256,26 @@ export function ChatApp() {
           </p>
         ) : null}
 
-        <ExamplePrompts
-          examples={EXAMPLE_PROMPTS}
-          onSelect={(text) => void sendMessage(text)}
-          disabled={isPending}
-        />
+        {!isTenant ? (
+          <ExamplePrompts
+            examples={EXAMPLE_PROMPTS}
+            onSelect={(text) => void sendMessage(text)}
+            disabled={isPending}
+          />
+        ) : null}
 
         <Composer
           value={input}
           onChange={setInput}
           onSend={() => void sendMessage(input)}
           disabled={isPending}
-          placeholder={input.trim() ? "Type a message…" : rotatingPlaceholder}
+          placeholder={
+            isTenant
+              ? "Type a message…"
+              : input.trim()
+                ? "Type a message…"
+                : rotatingPlaceholder
+          }
         />
       </div>
     </div>

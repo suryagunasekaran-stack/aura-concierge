@@ -1,6 +1,6 @@
 import { MAX_MESSAGE_LENGTH, MAX_HISTORY_MESSAGES } from "./config.js";
 import * as sessionStore from "./session/store.js";
-import { systemPrompt } from "./prompt/systemPrompt.js";
+import { buildSystemPrompt } from "./prompt/buildSystemPrompt.js";
 import { runToolLoop } from "./llm/loop.js";
 import { validateOutput } from "./util/validateOutput.js";
 import { checkInputGuard } from "./util/inputGuard.js";
@@ -12,6 +12,7 @@ import {
   listTrainingDocumentsFull,
 } from "./training/store.js";
 import { noTrainingKnowledgeBlock } from "./training/noTrainingBlock.js";
+import { fetchTenantProfile } from "./tenant/fetchProfile.js";
 
 const RESET_PHRASES = ["start over", "reset", "new booking", "restart lah"];
 
@@ -29,7 +30,11 @@ function checkRateLimit(_sessionId) {
  *
  * @param {string} sessionId
  * @param {string} userText
- * @param {{ knowledgeDocs?: { filename: string, content: string }[] }} [options]
+ * @param {{
+ *   knowledgeDocs?: { filename: string, content: string }[],
+ *   brandingSlug?: string,
+ *   tenant?: object | null,
+ * }} [options]
  * @returns {Promise<{ reply: string, toolCalls: string[] }>}
  */
 export async function processMessage(sessionId, userText, options = {}) {
@@ -77,30 +82,74 @@ export async function processMessage(sessionId, userText, options = {}) {
   const history = Array.isArray(session.history) ? session.history : [];
   const cappedHistory = history.slice(-MAX_HISTORY_MESSAGES);
 
-  /** Prefer Mindboxs per-client knowledge when provided; else DB training. */
+  /** Authoritative tenant profile from Mindboxs host when brandingSlug is set. */
+  const brandingSlug =
+    typeof options.brandingSlug === "string" ? options.brandingSlug.trim() : "";
+  let tenant = options.tenant ?? null;
+  if (!tenant && brandingSlug) {
+    tenant = await fetchTenantProfile(brandingSlug);
+    if (tenant) {
+      logger.info(`Loaded tenant profile for branding slug ${brandingSlug}`);
+    } else {
+      logger.warn(
+        `No tenant profile for branding slug ${brandingSlug} — using generic tenant shell`,
+      );
+      tenant = {
+        copy: { clinicName: "Concierge", assistantName: "Concierge" },
+        prompts: { systemPrompt: "", persona: "" },
+        knowledge: [],
+      };
+    }
+  }
+
+  /** Prefer server-fetched tenant knowledge, then client override, then DB. */
+  const tenantDocs = Array.isArray(tenant?.knowledge)
+    ? tenant.knowledge.filter(
+        (d) => d && typeof d.content === "string" && d.content.trim(),
+      )
+    : [];
+
   const overrideDocs = Array.isArray(options.knowledgeDocs)
     ? options.knowledgeDocs.filter(
         (d) => d && typeof d.content === "string" && d.content.trim(),
       )
     : null;
 
-  const trainingDocs =
-    overrideDocs && overrideDocs.length > 0
-      ? overrideDocs.map((d) => ({
-          filename: d.filename || "knowledge.txt",
-          content: d.content,
-        }))
-      : await listTrainingDocumentsFull();
+  let trainingDocs;
+  if (tenantDocs.length > 0) {
+    trainingDocs = tenantDocs.map((d) => ({
+      filename: d.filename || "knowledge.txt",
+      content: d.content,
+    }));
+  } else if (overrideDocs && overrideDocs.length > 0) {
+    trainingDocs = overrideDocs.map((d) => ({
+      filename: d.filename || "knowledge.txt",
+      content: d.content,
+    }));
+  } else if (tenant) {
+    // Branded tenant with no knowledge — do not fall back to shared Aura DB training
+    trainingDocs = [];
+  } else {
+    trainingDocs = await listTrainingDocumentsFull();
+  }
 
   const knowledgeBlock = buildKnowledgeBlock(trainingDocs);
-  const effectiveSystem =
-    trainingDocs.length > 0
-      ? `${systemPrompt}${knowledgeBlock}`
-      : `${systemPrompt}${noTrainingKnowledgeBlock}`;
-  if (trainingDocs.length > 0) {
+  const hasTraining = trainingDocs.length > 0;
+  const effectiveSystem = buildSystemPrompt({
+    tenant,
+    knowledgeBlock,
+    noTrainingBlock: noTrainingKnowledgeBlock,
+    hasTraining,
+  });
+
+  if (hasTraining) {
     logger.info(
       `Loaded ${trainingDocs.length} training document(s) for session ${sessionId}` +
-        (overrideDocs ? " (client override)" : ""),
+        (tenantDocs.length > 0
+          ? " (tenant profile)"
+          : overrideDocs
+            ? " (client override)"
+            : ""),
     );
   }
 

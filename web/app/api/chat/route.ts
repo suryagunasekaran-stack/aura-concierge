@@ -31,6 +31,7 @@ export async function POST(request: Request) {
         sessionId,
         text: text.trim(),
         knowledgeDocs,
+        brandingSlug: brandingSlug || undefined,
       }),
     });
 

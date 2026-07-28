@@ -44,13 +44,20 @@ app.post("/message", async (req, res) => {
     const sessionId = req.body?.sessionId;
     const text = req.body?.text;
     const knowledgeDocs = req.body?.knowledgeDocs;
+    const brandingSlug =
+      typeof req.body?.brandingSlug === "string"
+        ? req.body.brandingSlug.trim()
+        : "";
     if (!sessionId || typeof sessionId !== "string") {
       return res.status(400).json({ error: "sessionId is required" });
     }
     if (typeof text !== "string") {
       return res.status(400).json({ error: "text is required" });
     }
-    const result = await processMessage(sessionId, text, { knowledgeDocs });
+    const result = await processMessage(sessionId, text, {
+      knowledgeDocs,
+      brandingSlug: brandingSlug || undefined,
+    });
     return res.json(result);
   } catch (err) {
     logger.error("POST /message failed:", err);
